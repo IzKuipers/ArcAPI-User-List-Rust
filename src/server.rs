@@ -1,29 +1,38 @@
-use std::array;
+use crate::types::{
+    info::{dummy_server_info, ServerInfo},
+    user::{dummy_user_info, ApiResponse},
+};
 
-#[tokio::main]
-pub async fn get_user_list(
-    hostname: String,
-    authcode: String,
-    https: bool,
-    port: u16,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn get_user_list(hostname: String, authcode: String, https: bool, port: u16) -> ApiResponse {
     let protocol = if https { "https://" } else { "http://" };
-
     let url = format!("{protocol}{hostname}:{port}/users/get?ac={authcode}");
+    let call = reqwest::blocking::get(url);
 
-    println!("{}", url);
+    return match call {
+        Ok(data) => {
+            let response = data.text().unwrap_or_default();
+            let json: ApiResponse =
+                serde_json::from_str(response.as_str()).unwrap_or(dummy_user_info());
 
-    let response = reqwest::get(url).await?.text().await?;
-
-    println!("{response:#?}");
-
-    let json = serde_json::from_str(response.as_str());
-
-    Ok(())
+            return json;
+        }
+        Err(_) => dummy_user_info(),
+    };
 }
 
-#[derive(Serialize, Deserialize)]
-struct ApiResponse {
-    valid: bool,
-    data: ,
+pub fn get_server_info(hostname: String, authcode: String, https: bool, port: u16) -> ServerInfo {
+    let protocol = if https { "https://" } else { "http://" };
+    let url = format!("{protocol}{hostname}:{port}/v2/?ac={authcode}");
+    let call = reqwest::blocking::get(url);
+
+    return match call {
+        Ok(data) => {
+            let response = data.text().unwrap_or_default();
+            let json: ServerInfo =
+                serde_json::from_str(response.as_str()).unwrap_or(dummy_server_info());
+
+            return json;
+        }
+        Err(_) => dummy_server_info(),
+    };
 }

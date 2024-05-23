@@ -9,6 +9,8 @@ mod types;
 mod ui;
 
 fn main() {
+    ansi_term::enable_ansi_support().unwrap();
+
     let arguments = args::parse_args();
 
     let server = arguments.server;
